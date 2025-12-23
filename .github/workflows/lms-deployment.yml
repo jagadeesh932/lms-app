@@ -48,14 +48,14 @@ jobs:
     steps:
      - name: Create Docker network
        run: |
-        if docker network ls --format '{{.Name}}' | grep -w lms-network > /dev/null; then
+        if docker network ls --format '{{.Names}}' | grep -w lms-network > /dev/null; then
           docker network rm lms-network
         fi
         docker network create lms-network
 
      - name: Create Postgres database
        run: |
-        if docker ps -a --format '{{.Name}}' | grep -w lms-db > /dev/null; then
+        if docker ps -a --format '{{.Names}}' | grep -w lms-db > /dev/null; then
           docker rm -f lms-db
         fi
 
@@ -69,7 +69,7 @@ jobs:
 
      - name: Create Backend API
        run: |
-        if docker ps -a --format '{{.Name}}' | grep -w api > /dev/null; then
+        if docker ps -a --format '{{.Names}}' | grep -w api > /dev/null; then
           docker rm -f api
         fi
 
@@ -82,7 +82,7 @@ jobs:
 
      - name: Create Frontend (Web App)
        run: |
-        if docker ps -a --format '{{.Name}}' | grep -w web-app > /dev/null; then
+        if docker ps -a --format '{{.Names}}' | grep -w web-app > /dev/null; then
           docker rm -f web-app
         fi
 
