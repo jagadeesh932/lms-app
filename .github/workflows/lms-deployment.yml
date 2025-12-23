@@ -1,0 +1,71 @@
+name: lms-deployment
+on:
+ push:
+  branches: main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: sending notifications to slack
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{secrets.SLACK_URL}}
+          webhook-type: incoming-webhook
+          payload: |
+            channel: "lms-demo"
+            text: "lms-deploy started"
+      - name: git clone
+        uses: actions/checkout@v6.0.1
+      - name: checking the application code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: buidling of backend image
+        run: |
+          cd api
+          docker build -t jagadeesh9321/lmsbe .
+      - name: building of frontend image
+        run: |
+          cd web-app
+          docker build -t jagadeesh9321/lmsfe .
+      - name: docker login
+        uses: docker/login-action@v3.6.0
+        with:
+          username: jagadeesh9321
+          password: ${{secrets.DOCKERHUB_PASSWORD}}
+      - name: pushing of images into docker
+        run: |
+          docker push jagadeesh9321/lmsbe
+          docker push jagadeesh9321/lmsfe
+    
+        
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: creation of network
+        run: docker create network lms-network
+      - name: creation of postgres database
+        run: docker run -dt --name lms-db --network lms-network -p 5432:5432 -e POSTGRES_PASSWORD=${{secrets.POSTGRES_PASS}} -e POSTGRES_USER=${{vars.POSTGRES_USERNAME}} postgres
+      - name: creation of Backend-api
+        run: |
+          cd api
+          docker run -dt --name api --network lms-network -e "DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432" -p 3000:3000 jagadeesh9321/lmsbe
+      - name: creation of front end (webapp)
+        run: |
+          cd web-app
+          docker run -dt --name web-app --network lms-network -p 8080:8080 jagadeesh9321/lmsfe
+      - name: feedback to slack
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{secrets.SLACK_URL}}
+          webhook-type: incoming-webhook
+          payload: |
+            channel: "lms-demo"
+            text: "lms-deploy completed"
+      
