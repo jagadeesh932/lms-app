@@ -29,7 +29,9 @@ jobs:
       - name: building of frontend image
         run: |
           cd webapp
-          docker build -t ${{vars.DOCKERHUB_USERNAME}}/lmsfe .
+          docker build \
+          --build-arg VITE_API_URL=http://3.90.5.148:3000/api \
+          -t ${{vars.DOCKERHUB_USERNAME}}/lmsfe .
       - name: docker login
         uses: docker/login-action@v3.6.0
         with:
