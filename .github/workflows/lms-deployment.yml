@@ -14,10 +14,8 @@ jobs:
           payload: |
             channel: "lms-demo"
             text: "lms-deploy started"
-      - name: git clone
+      - name: git clone (code is pulled from repo to pipeline)
         uses: actions/checkout@v6.0.1
-      - name: checking the application code
-        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - uses: SonarSource/sonarqube-scan-action@v6
@@ -49,13 +47,42 @@ jobs:
 
     steps:
       - name: creation of network
-        run: docker create network lms-network
+        run: |
+          if docker network ls --format '{{.Name}}' | grep -w "lms-network" > /dev/null; then
+            echo "Network lms-network exists. Removing it..."
+            docker network rm lms-network
+          else
+            docker network create lms-network
+            echo "Network lms-network created..."
+          fi
       - name: creation of postgres database
-        run: docker run -dt --name lms-db --network lms-network -p 5432:5432 -e POSTGRES_PASSWORD=${{secrets.POSTGRES_PASS}} -e POSTGRES_USER=${{vars.POSTGRES_USERNAME}} postgres
+        run: |
+          if docker ps -a --format '{{.Name}}' | grep -w "lms-db" > /dev/null; then
+            echo "lms-db exists. Removing it..."
+            docker rm -f lms-db
+          else
+            docker run -dt --name lms-db --network lms-network -p 5432:5432 -e POSTGRES_PASSWORD=${{secrets.POSTGRES_PASS}} -e POSTGRES_USER=${{vars.POSTGRES_USERNAME}} postgres
+            echo "lms-db created..."
+          fi
       - name: creation of Backend-api
-        run: docker run -dt --name api --network lms-network -e "DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432" -p 3000:3000 jagadeesh9321/lmsbe
+        run: |
+          if docker ps -a --format '{{.Name}}' | grep -w "api" > /dev/null; then
+           echo "api exists. Removing it..."
+           docker rm -f api
+          else
+           docker run -dt --name api --network lms-network -e "DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432" -p 3000:3000 jagadeesh9321/lmsbe
+           echo "api created..."
+          fi
       - name: creation of front end (webapp)
-        run: docker run -dt --name web-app --network lms-network -p 8080:8080 jagadeesh9321/lmsfe
+        run: |
+          if docker ps -a --format '{{.Name}}' | grep -w "web-app" > /dev/null; then
+            echo "lms-db exists. Removing it..."
+            docker rm -f web-app
+          else
+            run: docker run -dt --name web-app --network lms-network -p 8080:8080 jagadeesh9321/lmsfe
+            echo "web-app created..."
+          fi
+       
       - name: feedback to slack
         uses: slackapi/slack-github-action@v2.1.1
         with:
