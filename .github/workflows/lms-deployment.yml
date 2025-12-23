@@ -63,8 +63,8 @@ jobs:
           --name lms-db \
           --network lms-network \
           -p 5432:5432 \
-          -e POSTGRES_USER=${{ vars.POSTGRES_USERNAME }} \
-          -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASS }} \
+          -e POSTGRES_USER=${{vars.POSTGRES_USERNAME}} \
+          -e POSTGRES_PASSWORD=${{secrets.POSTGRES_PASS}} \
           postgres
 
      - name: Create Backend API
@@ -77,8 +77,8 @@ jobs:
           --name api \
           --network lms-network \
           -p 3000:3000 \
-          -e DATABASE_URL=postgresql://${{ vars.POSTGRES_USERNAME }}:${{ secrets.POSTGRES_PASS }}@lms-db:5432 \
-          jagadeesh9321/lmsbe
+          -e DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432 \
+          ${{vars.DOCKERHUB_USERNAME}}/lmsbe
 
      - name: Create Frontend (Web App)
        run: |
@@ -90,7 +90,7 @@ jobs:
           --name web-app \
           --network lms-network \
           -p 8080:8080 \
-          jagadeesh9321/lmsfe
+          ${{vars.DOCKERHUB_USERNAME}}/lmsfe
        
      - name: feedback to slack
        uses: slackapi/slack-github-action@v2.1.1
