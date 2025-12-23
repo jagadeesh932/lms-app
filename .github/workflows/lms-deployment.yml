@@ -94,7 +94,7 @@ jobs:
         docker run -dt \
           --name web-app \
           --network lms-network \
-          -p 8080:8080 \
+          -p 80:80 \
           ${{vars.DOCKERHUB_USERNAME}}/lmsfe
        
      - name: feedback to slack
