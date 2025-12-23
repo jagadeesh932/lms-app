@@ -53,13 +53,9 @@ jobs:
       - name: creation of postgres database
         run: docker run -dt --name lms-db --network lms-network -p 5432:5432 -e POSTGRES_PASSWORD=${{secrets.POSTGRES_PASS}} -e POSTGRES_USER=${{vars.POSTGRES_USERNAME}} postgres
       - name: creation of Backend-api
-        run: |
-          cd api
-          docker run -dt --name api --network lms-network -e "DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432" -p 3000:3000 jagadeesh9321/lmsbe
+        run: docker run -dt --name api --network lms-network -e "DATABASE_URL=postgresql://${{vars.POSTGRES_USERNAME}}:${{secrets.POSTGRES_PASS}}@lms-db:5432" -p 3000:3000 jagadeesh9321/lmsbe
       - name: creation of front end (webapp)
-        run: |
-          cd webapp
-          docker run -dt --name web-app --network lms-network -p 8080:8080 jagadeesh9321/lmsfe
+        run: docker run -dt --name web-app --network lms-network -p 8080:8080 jagadeesh9321/lmsfe
       - name: feedback to slack
         uses: slackapi/slack-github-action@v2.1.1
         with:
